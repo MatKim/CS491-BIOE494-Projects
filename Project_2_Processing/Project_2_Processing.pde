@@ -4,15 +4,17 @@ Serial myPort;        // The serial port
 int xPos = 1;         // horizontal position of the graph
 float height_old = 0;
 float height_new = 0;
-float inByte = 0;
+float inByte;
+float breath;
+String row[] = new String[2];
 String inString = "";
+String heartbeatString = "";
+String breathString = "";
 boolean isHeartbeat = false;
-float heartbeats = 0;
+int heartbeats = 0;
 int time;
-float currBPM = 0;
-float baseLine = -1;
-int baseLineTime;
-float baseLineHeartbeats = 0;
+int currBPM = 0;
+int baseLine = -1;
 boolean isBaseLine = true;
 
 void setup () {
@@ -26,7 +28,6 @@ void setup () {
   // don't generate a serialEvent() unless you get a newline character:
   myPort.bufferUntil('\n');
   time = millis();
-  baseLineTime = millis();
   // set inital background:
   background(0xff);
 }
@@ -34,43 +35,37 @@ void setup () {
 
 void draw () {
   // everything happens in the serialEvent()
-  if (inString.equals("!")) { 
+  if (heartbeatString.equals("!")) { 
     stroke(0, 0, 0xff); //Set stroke to blue ( R, G, B)
     inByte = 512;  // middle of the ADC range (Flat Line)
   }
   // If the data is good let it through
   else {
     stroke(0xff, 0, 0); //Set stroke to red ( R, G, B)
-    inByte = float(inString);
+    inByte = float(heartbeatString);
   }
+  breath = float(breathString);
+  println(breath);
   if (inByte > 800) {
-    if (isBaseLine==true) {
-      if (isHeartbeat == false) {
-        baseLineHeartbeats++;
-        isHeartbeat = true;
-      }
-    } 
     countHeartbeat();
-  } else {
+  } 
+  else {
     isHeartbeat = false;
   }
-
+  println(inString);
   int currTime = millis() - time;
-
-  if (isBaseLine == true) {
-    int currBaseLineTime = millis() - baseLineTime;
-    if (currBaseLineTime > 30000) {
-      baseLine = (baseLineHeartbeats / currTime) * 1000 * 2;
+  if(isBaseLine == true){
+    if(currTime > 30000){
+      baseLine = (heartbeats / currTime) * 2;
       time = millis();
       heartbeats = 0;
       isBaseLine = false;
     }
   }
-  if (currTime > 4000) {
-    currBPM = (heartbeats / currTime) * 1000 * 15;
+  else if (currTime > 15000) {
+    currBPM = (heartbeats / currTime) * 4;
     time = millis();
     heartbeats = 0;
-    println(currBPM);
   }
   //Map and draw the line for new data point
   inByte = map(inByte, 0, 1023, 0, height);
@@ -89,11 +84,15 @@ void draw () {
   textSize(24);
   String bpm;
   String baselineBPM;
-
-  bpm = "BPM: " + currBPM;
-  if (baseLine == -1) {
-    baselineBPM = "Please wait for baseline bpm";
+  if (currBPM != 0) {
+    bpm = "BPM: " + currBPM;
   } else {
+    bpm = "PLEASE PUT ON HEART RATE MONITOR";
+  }
+  if(baseLine == -1){
+    baselineBPM = "Please wait for baseline bpm";
+  }
+  else{
     baselineBPM = "Baseline BPM: " + baseLine;
   }
   text(bpm, 250, 350);
@@ -102,9 +101,7 @@ void draw () {
 }
 
 void countHeartbeat() {
-  println("COUNT A HEARTBEAT: " + heartbeats);
   if (isHeartbeat == false) {
-    println("We GOT A HEARTBEAT");
     heartbeats++;
     isHeartbeat = true;
   }
@@ -114,4 +111,7 @@ void serialEvent (Serial myPort) {
   // get the ASCII string:
   inString = myPort.readStringUntil('\n');
   inString = trim(inString);
+  row = split(inString, ",");
+  heartbeatString = row[0];
+  breathString = row[1];
 }
