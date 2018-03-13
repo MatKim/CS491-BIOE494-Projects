@@ -7,10 +7,12 @@ float height_new = 0;
 float inByte = 0;
 String inString = "";
 boolean isHeartbeat = false;
-int heartbeats = 0;
+float heartbeats = 0;
 int time;
-int currBPM = 0;
-int baseLine = -1;
+float currBPM = 0;
+float baseLine = -1;
+int baseLineTime;
+float baseLineHeartbeats = 0;
 boolean isBaseLine = true;
 
 void setup () {
@@ -24,6 +26,7 @@ void setup () {
   // don't generate a serialEvent() unless you get a newline character:
   myPort.bufferUntil('\n');
   time = millis();
+  baseLineTime = millis();
   // set inital background:
   background(0xff);
 }
@@ -41,26 +44,33 @@ void draw () {
     inByte = float(inString);
   }
   if (inByte > 800) {
+    if (isBaseLine==true) {
+      if (isHeartbeat == false) {
+        baseLineHeartbeats++;
+        isHeartbeat = true;
+      }
+    } 
     countHeartbeat();
-  } 
-  else {
+  } else {
     isHeartbeat = false;
   }
-  println(inString);
+
   int currTime = millis() - time;
 
-  if(isBaseLine == true){
-    if(currTime > 30000){
-      baseLine = (heartbeats / currTime) * 2;
+  if (isBaseLine == true) {
+    int currBaseLineTime = millis() - baseLineTime;
+    if (currBaseLineTime > 30000) {
+      baseLine = (baseLineHeartbeats / currTime) * 1000 * 2;
       time = millis();
       heartbeats = 0;
       isBaseLine = false;
     }
   }
-  else if (currTime > 15000) {
-    currBPM = (heartbeats / currTime) * 4;
+  if (currTime > 4000) {
+    currBPM = (heartbeats / currTime) * 1000 * 15;
     time = millis();
     heartbeats = 0;
+    println(currBPM);
   }
   //Map and draw the line for new data point
   inByte = map(inByte, 0, 1023, 0, height);
@@ -79,15 +89,11 @@ void draw () {
   textSize(24);
   String bpm;
   String baselineBPM;
-  if (currBPM != 0) {
-    bpm = "BPM: " + currBPM;
-  } else {
-    bpm = "PLEASE PUT ON HEART RATE MONITOR";
-  }
-  if(baseLine == -1){
+
+  bpm = "BPM: " + currBPM;
+  if (baseLine == -1) {
     baselineBPM = "Please wait for baseline bpm";
-  }
-  else{
+  } else {
     baselineBPM = "Baseline BPM: " + baseLine;
   }
   text(bpm, 250, 350);
@@ -96,7 +102,9 @@ void draw () {
 }
 
 void countHeartbeat() {
+  println("COUNT A HEARTBEAT: " + heartbeats);
   if (isHeartbeat == false) {
+    println("We GOT A HEARTBEAT");
     heartbeats++;
     isHeartbeat = true;
   }
