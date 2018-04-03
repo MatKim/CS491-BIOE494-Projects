@@ -70,39 +70,42 @@ def main():
         uart = UART(finalDevice)
 
         # Write a string to the TX characteristic.
-        f= open('sketch_180403d/datat.txt', 'w+')
         #uart.write('Hello world!\r\n')
         #print("Sent 'Hello world!' to the finalDevice.")
 
         # Now wait up to one minute to receive data from the finalDevice.
         print('Waiting up to 60 seconds to receive data from the finalDevice...')
-        received = uart.read(timeout_sec=60)
-
+        received = uart.read(timeout_sec=10)
+        f= open('sketch_180403e/datat.txt', 'w+')
+        f.close()
         while (True):
-            if received is not None:
-                # Received data, print it out.
-                #print('Received: {0}'.format(received))
-                print (received)
-                f.write (received)
-                try:
-                    x = received.split(', ')[1]
-                except IndexError:
-                    continue
-                received = uart.read(timeout_sec=60)
-                try:
-                    y = received.split(', ')[1]
-                except IndexError:
-                    continue
-                #if x.length == 2 and y.length == 2:
-                    #x = x.split(', ')[1]
-                    #y = y.split(', ')[1]
-                plt.plot(int(x), int(y),'ro')
-                #plt.show()
-            else:
-                # Timeout waiting for data, None is returned.
-                print('Received no data!')
-                break
+            try:
+                if received is not None:
+                    if (received == ' '):
+                        continue
+                    # Received data, print it out.
+                    #print('Received: {0}'.format(received))
+                    print (received)
+                    f= open('sketch_180403e/datat.txt', 'a')
+                    f.write (received)
+                    f.flush()
+                    f.close()
+                    received = uart.read(timeout_sec=10)
+                else:
+                    # Timeout waiting for data, None is returned.
+                    print('Received no data!')
+                    break
+            except KeyboardInterrupt:
+                print('KeyBoardIntererupt')
+                f.seek(0)
+                f.truncate()
+                finalDevice.disconnect()
+            received = uart.read(timeout_sec=10)
     finally:
+        f= open('sketch_180403e/datat.txt', 'a')
+        f.seek(0)
+        f.truncate()
+        f.close()
         # Make sure finalDevice is disconnected on exit.
         print 'This is the' 
         print finalDevice
