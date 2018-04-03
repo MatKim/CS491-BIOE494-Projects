@@ -14,8 +14,8 @@ void loop() {
   else{
     // send the value of analog input 0:
       Serial.print(analogRead(A0));
-//      Serial.print(", ");
-//      Serial.print(analogRead(A3));
+      Serial.print(", ");
+      Serial.print(analogRead(A3));
       Serial.println();
   }
   //Wait for a bit to keep serial data from saturating
